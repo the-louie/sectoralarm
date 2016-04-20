@@ -65,11 +65,14 @@ def cleanup_user(current_status):
     """
     current_status['user'] = current_status['user'].replace('(av ', '')
     current_status['user'] = current_status['user'].replace(')', '')
+
     return current_status
+
 
 def fix_date(date_string):
     """
-    Convert the Sectore Alarm way of stating dates to something sane (ISO compliant).
+    Convert the Sectore Alarm way of stating dates to something
+    sane (ISO compliant).
     """
     datematches = DATENORMRE.match(date_string)
     namematches = DATESPECRE.match(date_string)
@@ -78,19 +81,29 @@ def fix_date(date_string):
         the_date = datetime.datetime(
             int(datetime.datetime.now().strftime('%Y')),
             int(datematches.group(2)),
-            int(datematches.group(1)), int(datematches.group(3)), int(datematches.group(4)))
+            int(datematches.group(1)),
+            int(datematches.group(3)),
+            int(datematches.group(4)))
         # If it's in the future, it was probably last year.
         if datetime.datetime.now() < the_date:
-            the_date = datetime.datetime(the_date.year - 1, the_date.month, the_date.day, the_date.hour, the_date.minute)
+            the_date = datetime.datetime(
+                the_date.year - 1,
+                the_date.month,
+                the_date.day,
+                the_date.hour,
+                the_date.minute)
     elif namematches:
         if namematches.group(1) == u'Idag':
             the_date = datetime.datetime(today.year, today.month, today.day)
         elif namematches.group(1) == u'Igår':
-            the_date = (datetime.datetime(today.year, today.month, today.day) - datetime.timedelta(1))
+            the_date = (datetime.datetime(today.year,
+                        today.month, today.day) - datetime.timedelta(1))
         else:
             raise Exception("Unknown date type in '{0}'".format(date_string))
 
-        the_date = the_date + datetime.timedelta(hours=int(namematches.group(2)), minutes=int(namematches.group(3)))
+        the_date = the_date + datetime.timedelta(
+            hours=int(namematches.group(2)),
+            minutes=int(namematches.group(3)))
 
     else:
         raise Exception("No match for ", date_string)
@@ -140,7 +153,11 @@ class SectorStatus():
         parser.feed(HTMLParser.HTMLParser().unescape(response.text))
         result = []
         for row in parser.log:
-            result.append({'event': row[0], 'date': fix_date(row[1]), 'user': row[2]})
+            result.append({
+                'event': row[0],
+                'date': fix_date(row[1]),
+                'user': row[2]
+            })
         return result
 
     def __save_cookies(self):
@@ -232,7 +249,7 @@ class SectorStatus():
 
 if __name__ == '__main__':
     if len(sys.argv) < 2 or (sys.argv[1] != 'status' and sys.argv[1] != 'log'):
-        print "Usage:", sys.argv[0],"[status|log]"
+        print "Usage:", sys.argv[0], "[status|log]"
         sys.exit(1)
 
     SECTORSTATUS = SectorStatus()
@@ -240,4 +257,3 @@ if __name__ == '__main__':
         print json.dumps(SECTORSTATUS.status())
     elif sys.argv[1] == 'log':
         print json.dumps(SECTORSTATUS.event_log())
-
