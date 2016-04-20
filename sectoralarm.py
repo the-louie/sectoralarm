@@ -5,38 +5,38 @@ This is a small module to interface against the webpage of Sector Alarm.
 Current functions:
     get_status()       - returns the current status as an object, example:
                             {
-                              "status": "Frånkopplat",
-                              "user": "Person C",
-                              "time": "Idag 9:40"
+                                "status": "Tillkopplat",
+                                "user": "Person A",
+                                "time": "2016-02-14 23:17:00"
                             }
 
     get_log()          - returns the event log as a list, example:
                             [
-                              [
-                                "Tillkopplat",
-                                "Igår 9:46",
-                                "Person A"
-                              ],
-                              [
-                                "Frånkopplat",
-                                "16/4 19:20",
-                                "Person B"
-                              ],
-                              [
-                                "Tillkopplat",
-                                "16/4 18:51",
-                                "Person B"
-                              ],
-                              [
-                                "Frånkopplat",
-                                "14/4 11:33",
-                                "Person C"
-                              ],
-                              [
-                                "Tillkopplat",
-                                "14/4 10:06",
-                                "Person A"
-                              ]
+                                {
+                                    "date": "2016-02-14 23:17:00",
+                                    "event": "Tillkopplat",
+                                    "user": "Person A"
+                                }, {
+                                    "date": "2016-02-15 17:09:00",
+                                    "event": "Frånkopplat",
+                                    "user": "Person B"
+                                }, {
+                                    "date": "2016-02-15 08:31:00",
+                                    "event": "Tillkopplat",
+                                    "user": "Person B"
+                                }, {
+                                    "date": "2016-02-15 05:40:00",
+                                    "event": "Frånkopplat",
+                                    "user": "Person C"
+                                }, {
+                                    "date": "2016-02-14 23:23:00",
+                                    "event": "Tillkopplat",
+                                    "user": "Person A"
+                                }, {
+                                    "date": "2016-02-14 19:24:00",
+                                    "event": "Frånkopplat",
+                                    "user": "Person C"
+                                }
                             ]
 """
 
@@ -45,6 +45,7 @@ import datetime
 import json
 from helpers.HTML import parseHTMLToken, parseHTMLstatus, parseHTMLlog
 import HTMLParser
+import os
 import re
 import requests
 import sys
@@ -59,14 +60,17 @@ DATENORMRE = re.compile(r'(\d+)/(\d+) (\d+):(\d+)')
 DATESPECRE = re.compile(r'^(.+) (\d+):(\d+)')
 
 
-def cleanup_user(current_status):
+def log(message):
+    if os.environ.get('DEBUG'):
+        print message
+
+
+def fix_user(user_string):
     """
     Cleanup the user string in the status object to only contain username.
     """
-    current_status['user'] = current_status['user'].replace('(av ', '')
-    current_status['user'] = current_status['user'].replace(')', '')
 
-    return current_status
+    return user_string.replace('(av ', '').replace(')', '')
 
 
 def fix_date(date_string):
@@ -170,6 +174,9 @@ class SectorStatus():
                 requests.utils.dict_from_cookiejar(self.session.cookies),
                 cookie_file
             )
+        log("Saved {0} cookie values".format(
+            len(requests.utils.dict_from_cookiejar(
+                self.session.cookies).keys())))
 
     def __load_cookies(self):
         """
@@ -180,6 +187,9 @@ class SectorStatus():
             self.session.cookies = requests.utils.cookiejar_from_dict(
                 json.load(cookie_file)
             )
+        log("Loaded {0} cookie values".format(
+            len(requests.utils.dict_from_cookiejar(
+                self.session.cookies).keys())))
 
     def __is_logged_in(self):
         """
@@ -200,6 +210,7 @@ class SectorStatus():
         self.__load_cookies()
 
         if not self.__is_logged_in():
+            log("Logging in")
             form_data = {
                 'userNameOrEmail': config.email,
                 'password': config.password
@@ -220,10 +231,12 @@ class SectorStatus():
 
             # Save the cookies to file.
             self.__save_cookies()
+        else:
+            log("Already logged in")
 
     def event_log(self):
         """
-        Retrive the event log
+        Retrive the event log, login if neccesary.
         """
         self.__login()
 
@@ -234,18 +247,14 @@ class SectorStatus():
         """
         Wrapper function for logging in and fetching the status
         of the alarm in one go that returns a dict.
-
-        Example:
-            {
-                'status': 'Fr\xe5nkopplat',
-                'user': 'Person ett',
-                'time': 'Idag 07:14'
-            }
         """
         self.__login()
 
         # Get the status
-        return cleanup_user(self.__get_status())
+        status = self.__get_status()
+        status['time'] = fix_date(status['time'])
+        status['user'] = fix_user(status['user'])
+        return status
 
 if __name__ == '__main__':
     if len(sys.argv) < 2 or (sys.argv[1] != 'status' and sys.argv[1] != 'log'):
