@@ -1,5 +1,11 @@
 from HTMLParser import HTMLParser
 
+STATUSKEYS = {
+    'status': 'event',
+    'time': 'timestamp',
+    'user': 'user'
+}
+
 # create a subclass and override the handler methods
 class parseHTMLToken(HTMLParser):
     def __init__(self):
@@ -32,7 +38,7 @@ class parseHTMLstatus(HTMLParser):
     def handle_data(self, data):
         stripdata = data.strip()
         if self.currclass and stripdata != '':
-            self.statuses[self.currclass] = stripdata
+            self.statuses[STATUSKEYS[self.currclass]] = stripdata
 
     def handle_endtag(self, tag):
         self.currclass = None

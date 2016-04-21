@@ -18,27 +18,27 @@ Retrieves the last 30 events in the event log and returns a list with dict. It d
 ```JSON
 [
 	{
-		"date": "2016-02-14 23:17:00",
+		"timestamp": "2016-02-14 23:17:00",
 		"event": "Tillkopplat",
 		"user": "Person A"
 	}, {
-		"date": "2016-02-15 17:09:00",
+		"timestamp": "2016-02-15 17:09:00",
 		"event": "Frånkopplat",
 		"user": "Person B"
 	}, {
-		"date": "2016-02-15 08:31:00",
+		"timestamp": "2016-02-15 08:31:00",
 		"event": "Tillkopplat",
 		"user": "Person B"
 	}, {
-		"date": "2016-02-15 05:40:00",
+		"timestamp": "2016-02-15 05:40:00",
 		"event": "Frånkopplat",
 		"user": "Person C"
 	}, {
-		"date": "2016-02-14 23:23:00",
+		"timestamp": "2016-02-14 23:23:00",
 		"event": "Tillkopplat",
 		"user": "Person A"
 	}, {
-		"date": "2016-02-14 19:24:00",
+		"timestamp": "2016-02-14 19:24:00",
 		"event": "Frånkopplat",
 		"user": "Person C"
 	}
@@ -49,8 +49,8 @@ Retrieves the last 30 events in the event log and returns a list with dict. It d
 Retrieves the current status, timestamp and name of the person who changed the status.
 ```JSON
 {
-	"status": "Tillkopplat",
+	"event": "Tillkopplat",
 	"user": "Person A",
-	"time": "2016-02-14 23:17:00"
+	"timestamp": "2016-02-14 23:17:00"
 }
 ```

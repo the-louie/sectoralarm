@@ -5,35 +5,35 @@ This is a small module to interface against the webpage of Sector Alarm.
 Current functions:
     get_status()       - returns the current status as an object, example:
                             {
-                                "status": "Tillkopplat",
+                                "event": "Tillkopplat",
                                 "user": "Person A",
-                                "time": "2016-02-14 23:17:00"
+                                "timestamp": "2016-02-14 23:17:00"
                             }
 
     get_log()          - returns the event log as a list, example:
                             [
                                 {
-                                    "date": "2016-02-14 23:17:00",
+                                    "timestamp": "2016-02-14 23:17:00",
                                     "event": "Tillkopplat",
                                     "user": "Person A"
                                 }, {
-                                    "date": "2016-02-15 17:09:00",
+                                    "timestamp": "2016-02-15 17:09:00",
                                     "event": "Frånkopplat",
                                     "user": "Person B"
                                 }, {
-                                    "date": "2016-02-15 08:31:00",
+                                    "timestamp": "2016-02-15 08:31:00",
                                     "event": "Tillkopplat",
                                     "user": "Person B"
                                 }, {
-                                    "date": "2016-02-15 05:40:00",
+                                    "timestamp": "2016-02-15 05:40:00",
                                     "event": "Frånkopplat",
                                     "user": "Person C"
                                 }, {
-                                    "date": "2016-02-14 23:23:00",
+                                    "timestamp": "2016-02-14 23:23:00",
                                     "event": "Tillkopplat",
                                     "user": "Person A"
                                 }, {
-                                    "date": "2016-02-14 19:24:00",
+                                    "timestamp": "2016-02-14 19:24:00",
                                     "event": "Frånkopplat",
                                     "user": "Person C"
                                 }
@@ -159,7 +159,7 @@ class SectorStatus():
         for row in parser.log:
             result.append({
                 'event': row[0],
-                'date': fix_date(row[1]),
+                'timestamp': fix_date(row[1]),
                 'user': row[2]
             })
         return result
@@ -252,7 +252,7 @@ class SectorStatus():
 
         # Get the status
         status = self.__get_status()
-        status['time'] = fix_date(status['time'])
+        status['timestamp'] = fix_date(status['timestamp'])
         status['user'] = fix_user(status['user'])
         return status
 
