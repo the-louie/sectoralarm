@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""
+'''
 This is a small module to interface against the webpage of Sector Alarm.
 
 Current functions:
@@ -38,7 +38,7 @@ Current functions:
                                     "user": "Person C"
                                 }
                             ]
-"""
+'''
 
 import config
 import datetime
@@ -66,18 +66,18 @@ def log(message):
 
 
 def fix_user(user_string):
-    """
+    '''
     Cleanup the user string in the status object to only contain username.
-    """
+    '''
 
     return user_string.replace('(av ', '').replace(')', '')
 
 
 def fix_date(date_string):
-    """
+    '''
     Convert the Sectore Alarm way of stating dates to something
     sane (ISO compliant).
-    """
+    '''
     datematches = DATENORMRE.match(date_string)
     namematches = DATESPECRE.match(date_string)
     today = datetime.datetime.now().date()
@@ -103,14 +103,14 @@ def fix_date(date_string):
             the_date = (datetime.datetime(today.year,
                         today.month, today.day) - datetime.timedelta(1))
         else:
-            raise Exception("Unknown date type in '{0}'".format(date_string))
+            raise Exception('Unknown date type in "{0}"'.format(date_string))
 
         the_date = the_date + datetime.timedelta(
             hours=int(namematches.group(2)),
             minutes=int(namematches.group(3)))
 
     else:
-        raise Exception("No match for ", date_string)
+        raise Exception('No match for ', date_string)
 
     result = the_date.strftime('%Y-%m-%d %H:%M:%S')
 
@@ -118,18 +118,18 @@ def fix_date(date_string):
 
 
 class SectorStatus():
-    """
+    '''
     The class that returns the current status of the alarm.
-    """
+    '''
     def __init__(self):
         # self.session = None
         self.session = requests.Session()
 
     def __get_token(self):
-        """
+        '''
         Do an initial request to get the CSRF-token from
         the login form.
-        """
+        '''
         response = self.session.get(LOGINPAGE)
         parser = parseHTMLToken()
         parser.feed(response.text)
@@ -140,18 +140,18 @@ class SectorStatus():
         return parser.tokens[0]
 
     def __get_status(self):
-        """
+        '''
         Fetch and parse the actual alarm status page.
-        """
+        '''
         response = self.session.get(STATUSPAGE)
         parser = parseHTMLstatus()
         parser.feed(response.text)
         return parser.statuses
 
     def __get_log(self):
-        """
+        '''
         Fetch and parse the event log page.
-        """
+        '''
         response = self.session.get(LOGPAGE)
         parser = parseHTMLlog()
         parser.feed(HTMLParser.HTMLParser().unescape(response.text))
@@ -165,52 +165,52 @@ class SectorStatus():
         return result
 
     def __save_cookies(self):
-        """
+        '''
         Store the cookie-jar on disk to avoid having to login
         each time the script is run.
-        """
+        '''
         with open(COOKIEFILE, 'w') as cookie_file:
             json.dump(
                 requests.utils.dict_from_cookiejar(self.session.cookies),
                 cookie_file
             )
-        log("Saved {0} cookie values".format(
+        log('Saved {0} cookie values'.format(
             len(requests.utils.dict_from_cookiejar(
                 self.session.cookies).keys())))
 
     def __load_cookies(self):
-        """
+        '''
         Load the cookies from the cookie-jar to avoid logging
         in again if the session still is valid.
-        """
+        '''
         with open(COOKIEFILE, 'r') as cookie_file:
             self.session.cookies = requests.utils.cookiejar_from_dict(
                 json.load(cookie_file)
             )
-        log("Loaded {0} cookie values".format(
+        log('Loaded {0} cookie values'.format(
             len(requests.utils.dict_from_cookiejar(
                 self.session.cookies).keys())))
 
     def __is_logged_in(self):
-        """
+        '''
         Check if we're logged in.
 
         Returns bool
-        """
+        '''
         response = self.session.get(LOGINPAGE)
         loggedin = ('logOnForm' not in response.text)
         return loggedin
 
     def __login(self):
-        """
+        '''
         Login to the site if we're not logged in already. First try any
         existing session from the stored cookie. If that fails we should
         login again.
-        """
+        '''
         self.__load_cookies()
 
         if not self.__is_logged_in():
-            log("Logging in")
+            log('Logging in')
             form_data = {
                 'userNameOrEmail': config.email,
                 'password': config.password
@@ -222,8 +222,8 @@ class SectorStatus():
             # Verify username and password.
             verify_page = self.session.post(VALIDATEPAGE, data=form_data)
             if not verify_page.json()['Success']:
-                print "FAILURE",
-                print (verify_page.json()['Message'] or "No messsage")
+                print 'FAILURE',
+                print (verify_page.json()['Message'] or 'No messsage')
                 sys.exit(1)
 
             # Do the actual logging in.
@@ -232,22 +232,22 @@ class SectorStatus():
             # Save the cookies to file.
             self.__save_cookies()
         else:
-            log("Already logged in")
+            log('Already logged in')
 
     def event_log(self):
-        """
+        '''
         Retrive the event log, login if neccesary.
-        """
+        '''
         self.__login()
 
         # Get event log
         return self.__get_log()
 
     def status(self):
-        """
+        '''
         Wrapper function for logging in and fetching the status
         of the alarm in one go that returns a dict.
-        """
+        '''
         self.__login()
 
         # Get the status
@@ -258,7 +258,7 @@ class SectorStatus():
 
 if __name__ == '__main__':
     if len(sys.argv) < 2 or (sys.argv[1] != 'status' and sys.argv[1] != 'log'):
-        print "Usage:", sys.argv[0], "[status|log]"
+        print 'Usage: {0} [status|log]'.format(sys.argv[0])
         sys.exit(1)
 
     SECTORSTATUS = SectorStatus()
