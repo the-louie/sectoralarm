@@ -159,17 +159,21 @@ class SectorStatus():
         parser.feed(HTMLParser.HTMLParser().unescape(response.text))
         result = []
         for row in parser.log:
-            try:
-                result.append({
-                    'event': row[0],
-                    'timestamp': fix_date(row[1]),
-                    'user': row[2]
-                })
-            except IndexError, e:
-                result.append({
-                    'raw_event': row,
-                    'error_message': e.__class__.__name__ + str(e)
-                })
+            row_data = {}
+            if len(row) > 0:
+                row_data['event'] = row[0]
+
+            if len(row) > 1:
+                row_data['timestamp'] = row[1]
+
+            if len(row) > 2:
+                row_data['user'] = row[2]
+
+            if len(row) > 3:
+                row_data['unknown'] = row[3:]
+
+            result.append(row_data)
+
         return result
 
     def __save_cookies(self):
@@ -191,10 +195,15 @@ class SectorStatus():
         Load the cookies from the cookie-jar to avoid logging
         in again if the session still is valid.
         '''
-        with open(COOKIEFILE, 'r') as cookie_file:
-            self.session.cookies = requests.utils.cookiejar_from_dict(
-                json.load(cookie_file)
-            )
+        try:
+            with open(COOKIEFILE, 'r') as cookie_file:
+                self.session.cookies = requests.utils.cookiejar_from_dict(
+                    json.load(cookie_file)
+                )
+        except IOError, e:
+            if str(e)[:35] != '[Errno 2] No such file or directory':
+                raise e
+
         log('Loaded {0} cookie values'.format(
             len(requests.utils.dict_from_cookiejar(
                 self.session.cookies).keys())))
