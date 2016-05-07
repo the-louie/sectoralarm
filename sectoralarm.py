@@ -40,7 +40,6 @@ Current functions:
                             ]
 '''
 
-import config
 import datetime
 import json
 from helpers.HTML import parseHTMLToken, parseHTMLstatus, parseHTMLlog
@@ -50,11 +49,12 @@ import re
 import requests
 import sys
 
+
 LOGINPAGE = 'https://minasidor.sectoralarm.se/Users/Account/LogOn'
 VALIDATEPAGE = 'https://minasidor.sectoralarm.se/MyPages.LogOn/Account/ValidateUser'
-STATUSPAGE = 'https://minasidor.sectoralarm.se/MyPages/Overview/Panel/' + config.siteid
-LOGPAGE = 'https://minasidor.sectoralarm.se/MyPages/Panel/AlarmSystem/' + config.siteid + '?locksAvailable=False'
-COOKIEFILE = './data/cookies.jar'
+STATUSPAGE = 'https://minasidor.sectoralarm.se/MyPages/Overview/Panel/'
+LOGPAGE = 'https://minasidor.sectoralarm.se/MyPages/Panel/AlarmSystem/'
+COOKIEFILE = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'data', 'cookies.jar')
 
 DATENORMRE = re.compile(r'(\d+)/(\d+) (\d+):(\d+)')
 DATESPECRE = re.compile(r'^(.+) (\d+):(\d+)')
@@ -121,9 +121,11 @@ class SectorStatus():
     '''
     The class that returns the current status of the alarm.
     '''
-    def __init__(self):
-        # self.session = None
+
+    def __init__(self, config):
+        self.config = config
         self.session = requests.Session()
+
 
     def __get_token(self):
         '''
@@ -143,7 +145,7 @@ class SectorStatus():
         '''
         Fetch and parse the actual alarm status page.
         '''
-        response = self.session.get(STATUSPAGE)
+        response = self.session.get(STATUSPAGE + self.config.siteid)
         parser = parseHTMLstatus()
         parser.feed(response.text)
         return parser.statuses
@@ -152,7 +154,7 @@ class SectorStatus():
         '''
         Fetch and parse the event log page.
         '''
-        response = self.session.get(LOGPAGE)
+        response = self.session.get(LOGPAGE + self.config.siteid + '?locksAvailable=False')
         parser = parseHTMLlog()
         parser.feed(HTMLParser.HTMLParser().unescape(response.text))
         result = []
@@ -267,7 +269,9 @@ if __name__ == '__main__':
         print 'Usage: {0} [status|log]'.format(sys.argv[0])
         sys.exit(1)
 
-    SECTORSTATUS = SectorStatus()
+    import config
+    SECTORSTATUS = SectorStatus(config)
+
     if sys.argv[1] == 'status':
         print json.dumps(SECTORSTATUS.status())
     elif sys.argv[1] == 'log':
