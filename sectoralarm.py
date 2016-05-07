@@ -157,11 +157,17 @@ class SectorStatus():
         parser.feed(HTMLParser.HTMLParser().unescape(response.text))
         result = []
         for row in parser.log:
-            result.append({
-                'event': row[0],
-                'timestamp': fix_date(row[1]),
-                'user': row[2]
-            })
+            try:
+                result.append({
+                    'event': row[0],
+                    'timestamp': fix_date(row[1]),
+                    'user': row[2]
+                })
+            except IndexError, e:
+                result.append({
+                    'raw_event': row,
+                    'error_message': e.__class__.__name__ + str(e)
+                })
         return result
 
     def __save_cookies(self):
