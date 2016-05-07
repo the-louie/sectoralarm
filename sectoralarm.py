@@ -229,8 +229,8 @@ class SectorStatus():
         if not self.__is_logged_in():
             log('Logging in')
             form_data = {
-                'userNameOrEmail': config.email,
-                'password': config.password
+                'userNameOrEmail': self.config.email,
+                'password': self.config.password
             }
             self.session = requests.Session()
             # Get CSRF-token and add it to the form data.
