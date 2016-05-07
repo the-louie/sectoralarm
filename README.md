@@ -18,9 +18,15 @@ Retrieves the last 30 events in the event log and returns a list with dict. It d
 ```JSON
 [
 	{
-		"timestamp": "2016-02-14 23:17:00",
+		"timestamp": "2016-02-15 23:17:00",
 		"event": "Tillkopplat",
 		"user": "Person A"
+	}, {
+		"timestamp": "2016-02-15 20:38:00",
+		"event": "Strömfel (återställt)"
+	}, {
+		"timestamp": "2016-02-15 20:16:00",
+		"event": "Strömfel"
 	}, {
 		"timestamp": "2016-02-15 17:09:00",
 		"event": "Frånkopplat",

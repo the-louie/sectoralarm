@@ -13,9 +13,15 @@ Current functions:
     get_log()          - returns the event log as a list, example:
                             [
                                 {
-                                    "timestamp": "2016-02-14 23:17:00",
+                                    "timestamp": "2016-02-15 23:17:00",
                                     "event": "Tillkopplat",
                                     "user": "Person A"
+                                }, {
+                                    "timestamp": "2016-02-15 20:38:00",
+                                    "event": "Strömfel (återställt)"
+                                }, {
+                                    "timestamp": "2016-02-15 20:16:00",
+                                    "event": "Strömfel"
                                 }, {
                                     "timestamp": "2016-02-15 17:09:00",
                                     "event": "Frånkopplat",
@@ -164,7 +170,7 @@ class SectorStatus():
                 row_data['event'] = row[0]
 
             if len(row) > 1:
-                row_data['timestamp'] = row[1]
+                row_data['timestamp'] = fix_date(row[1])
 
             if len(row) > 2:
                 row_data['user'] = row[2]
