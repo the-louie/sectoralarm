@@ -4,69 +4,54 @@ This is a small module to interface against the webpage of Sector Alarm.
 
 Current functions:
     get_status()       - returns the current status as an object, example:
-                            {
-                                "event": "Tillkopplat",
-                                "user": "Person A",
-                                "timestamp": "2016-02-14 23:17:00"
-                            }
+                            {"ArmedStatus": "disarmed"}
 
     get_log()          - returns the event log as a list, example:
                             [
                                 {
-                                    "timestamp": "2016-02-15 23:17:00",
-                                    "event": "Tillkopplat",
-                                    "user": "Person A"
-                                }, {
-                                    "timestamp": "2016-02-15 20:38:00",
-                                    "event": "Strömfel (återställt)"
-                                }, {
-                                    "timestamp": "2016-02-15 20:16:00",
-                                    "event": "Strömfel"
-                                }, {
-                                    "timestamp": "2016-02-15 17:09:00",
-                                    "event": "Frånkopplat",
-                                    "user": "Person B"
-                                }, {
-                                    "timestamp": "2016-02-15 08:31:00",
-                                    "event": "Tillkopplat",
-                                    "user": "Person B"
-                                }, {
-                                    "timestamp": "2016-02-15 05:40:00",
-                                    "event": "Frånkopplat",
-                                    "user": "Person C"
-                                }, {
-                                    "timestamp": "2016-02-14 23:23:00",
-                                    "event": "Tillkopplat",
-                                    "user": "Person A"
-                                }, {
-                                    "timestamp": "2016-02-14 19:24:00",
-                                    "event": "Frånkopplat",
-                                    "user": "Person C"
+                                    "EventType": "disarmed",
+                                    "LockName": "sitename.event.disarming",
+                                    "User": "user1",
+                                    "Channel": "",
+                                    "Time": "2017-06-18T16:17:00"
+                                },
+                                {
+                                    "EventType": "armed",
+                                    "LockName": "sitename.event.arming",
+                                    "User": "user2",
+                                    "Channel": "",
+                                    "Time": "2017-06-17T12:01:00"
+                                },
+                                {
+                                    "EventType": "disarmed",
+                                    "LockName": "sitename.event.disarming",
+                                    "User": "user1",
+                                    "Channel": "",
+                                    "Time": "2017-06-17T10:22:00"
                                 }
                             ]
 '''
 
 import datetime
 import json
-from helpers.HTML import parseHTMLToken, parseHTMLstatus, parseHTMLlog
-import HTMLParser
 import os
 import re
-import requests
 import sys
+import requests
+from helpers.HTML import parseHTMLToken
 
 
-LOGINPAGE = 'https://minasidor.sectoralarm.se/Users/Account/LogOn'
-VALIDATEPAGE = 'https://minasidor.sectoralarm.se/MyPages.LogOn/Account/ValidateUser'
-STATUSPAGE = 'https://minasidor.sectoralarm.se/MyPages/Overview/Panel/'
-LOGPAGE = 'https://minasidor.sectoralarm.se/MyPages/Panel/AlarmSystem/'
+LOGINPAGE = 'https://mypagesapi.sectoralarm.net/User/Login'
+CHECKPAGE = 'https://mypagesapi.sectoralarm.net/'
+STATUSPAGE = 'https://mypagesapi.sectoralarm.net/Panel/GetOverview/'
+LOGPAGE = 'https://mypagesapi.sectoralarm.net/Panel/GetPanelHistory/'
 COOKIEFILE = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'data', 'cookies.jar')
-
-DATENORMRE = re.compile(r'(\d+)/(\d+) (\d+):(\d+)')
-DATESPECRE = re.compile(r'^(.+) (\d+):(\d+)')
 
 
 def log(message):
+    '''
+    If we're in debug-mode we should show a lot more output
+    '''
     if os.environ.get('DEBUG'):
         print message
 
@@ -75,7 +60,6 @@ def fix_user(user_string):
     '''
     Cleanup the user string in the status object to only contain username.
     '''
-
     return user_string.replace('(av ', '').replace(')', '')
 
 
@@ -84,41 +68,13 @@ def fix_date(date_string):
     Convert the Sectore Alarm way of stating dates to something
     sane (ISO compliant).
     '''
-    datematches = DATENORMRE.match(date_string)
-    namematches = DATESPECRE.match(date_string)
-    today = datetime.datetime.now().date()
-    if datematches:
-        the_date = datetime.datetime(
-            int(datetime.datetime.now().strftime('%Y')),
-            int(datematches.group(2)),
-            int(datematches.group(1)),
-            int(datematches.group(3)),
-            int(datematches.group(4)))
-        # If it's in the future, it was probably last year.
-        if datetime.datetime.now() < the_date:
-            the_date = datetime.datetime(
-                the_date.year - 1,
-                the_date.month,
-                the_date.day,
-                the_date.hour,
-                the_date.minute)
-    elif namematches:
-        if namematches.group(1) == u'Idag':
-            the_date = datetime.datetime(today.year, today.month, today.day)
-        elif namematches.group(1) == u'Igår':
-            the_date = (datetime.datetime(today.year,
-                        today.month, today.day) - datetime.timedelta(1))
-        else:
-            raise Exception('Unknown date type in "{0}"'.format(date_string))
-
-        the_date = the_date + datetime.timedelta(
-            hours=int(namematches.group(2)),
-            minutes=int(namematches.group(3)))
-
-    else:
-        raise Exception('No match for ', date_string)
-
-    result = the_date.strftime('%Y-%m-%d %H:%M:%S')
+    result = ""
+    try:
+        epoch = re.search(r'\/Date\(([0-9]+?)\)\/', date_string).group(1)
+        date = datetime.datetime.fromtimestamp(int(epoch)/1000)
+        result = date.isoformat()
+    except AttributeError:
+        result = ""
 
     return result
 
@@ -127,9 +83,8 @@ class SectorStatus():
     '''
     The class that returns the current status of the alarm.
     '''
-
-    def __init__(self, config):
-        self.config = config
+    def __init__(self, configdata):
+        self.config = configdata
         self.session = requests.Session()
 
 
@@ -141,7 +96,6 @@ class SectorStatus():
         response = self.session.get(LOGINPAGE)
         parser = parseHTMLToken()
         parser.feed(response.text)
-
         if not parser.tokens[0]:
             raise Exception('Could not find CSRF-token.')
 
@@ -151,36 +105,21 @@ class SectorStatus():
         '''
         Fetch and parse the actual alarm status page.
         '''
-        response = self.session.get(STATUSPAGE + self.config.siteid)
-        parser = parseHTMLstatus()
-        parser.feed(response.text)
-        return parser.statuses
+        response = self.session.post(STATUSPAGE)
+        return {'ArmedStatus': response.json().get('Panel', {}).get('ArmedStatus', None)}
 
     def __get_log(self):
         '''
         Fetch and parse the event log page.
         '''
-        response = self.session.get(LOGPAGE + self.config.siteid + '?locksAvailable=False')
-        parser = parseHTMLlog()
-        parser.feed(HTMLParser.HTMLParser().unescape(response.text))
-        result = []
-        for row in parser.log:
-            row_data = {}
-            if len(row) > 0:
-                row_data['event'] = row[0]
+        response = self.session.get(LOGPAGE + config.siteid)
+        event_log = []
+        for row in  (response.json())['LogDetails']:
+            row_data = row.copy()
+            row_data['Time'] = fix_date(row_data.get('Time', None))
+            event_log.append(row_data)
 
-            if len(row) > 1:
-                row_data['timestamp'] = fix_date(row[1])
-
-            if len(row) > 2:
-                row_data['user'] = row[2]
-
-            if len(row) > 3:
-                row_data['unknown'] = row[3:]
-
-            result.append(row_data)
-
-        return result
+        return event_log
 
     def __save_cookies(self):
         '''
@@ -206,9 +145,9 @@ class SectorStatus():
                 self.session.cookies = requests.utils.cookiejar_from_dict(
                     json.load(cookie_file)
                 )
-        except IOError, e:
-            if str(e)[:35] != '[Errno 2] No such file or directory':
-                raise e
+        except IOError, message:
+            if str(message)[:35] != '[Errno 2] No such file or directory':
+                raise message
 
         log('Loaded {0} cookie values'.format(
             len(requests.utils.dict_from_cookiejar(
@@ -220,8 +159,8 @@ class SectorStatus():
 
         Returns bool
         '''
-        response = self.session.get(LOGINPAGE)
-        loggedin = ('logOnForm' not in response.text)
+        response = self.session.get(CHECKPAGE)
+        loggedin = ('frmLogin' not in response.text)
         return loggedin
 
     def __login(self):
@@ -235,19 +174,12 @@ class SectorStatus():
         if not self.__is_logged_in():
             log('Logging in')
             form_data = {
-                'userNameOrEmail': self.config.email,
+                'userID': self.config.email,
                 'password': self.config.password
             }
             self.session = requests.Session()
             # Get CSRF-token and add it to the form data.
             form_data['__RequestVerificationToken'] = self.__get_token()
-
-            # Verify username and password.
-            verify_page = self.session.post(VALIDATEPAGE, data=form_data)
-            if not verify_page.json()['Success']:
-                print 'FAILURE',
-                print (verify_page.json()['Message'] or 'No messsage')
-                sys.exit(1)
 
             # Do the actual logging in.
             self.session.post(LOGINPAGE + '?Returnurl=~%2F', data=form_data)
@@ -275,8 +207,6 @@ class SectorStatus():
 
         # Get the status
         status = self.__get_status()
-        status['timestamp'] = fix_date(status['timestamp'])
-        status['user'] = fix_user(status['user'])
         return status
 
 if __name__ == '__main__':
