@@ -14,39 +14,29 @@ siteid = '12345678'
 ## Calls
 
 ### event_log()
-Retrieves the last 30 events in the event log and returns a list with dict. It does some guesswork to convert the dates to sane ones.
+Retrieves all available events in the event log and returns a list with dict.
 ```JSON
 [
 	{
-		"timestamp": "2016-02-15 23:17:00",
-		"event": "Tillkopplat",
-		"user": "Person A"
-	}, {
-		"timestamp": "2016-02-15 20:38:00",
-		"event": "Strömfel (återställt)"
-	}, {
-		"timestamp": "2016-02-15 20:16:00",
-		"event": "Strömfel"
-	}, {
-		"timestamp": "2016-02-15 17:09:00",
-		"event": "Frånkopplat",
-		"user": "Person B"
-	}, {
-		"timestamp": "2016-02-15 08:31:00",
-		"event": "Tillkopplat",
-		"user": "Person B"
-	}, {
-		"timestamp": "2016-02-15 05:40:00",
-		"event": "Frånkopplat",
-		"user": "Person C"
-	}, {
-		"timestamp": "2016-02-14 23:23:00",
-		"event": "Tillkopplat",
-		"user": "Person A"
-	}, {
-		"timestamp": "2016-02-14 19:24:00",
-		"event": "Frånkopplat",
-		"user": "Person C"
+		"EventType": "disarmed",
+		"LockName": "sitename.event.disarming",
+		"User": "user1",
+		"Channel": "",
+		"Time": "2017-06-18T16:17:00"
+	},
+	{
+		"EventType": "armed",
+		"LockName": "sitename.event.arming",
+		"User": "user2",
+		"Channel": "",
+		"Time": "2017-06-17T12:01:00"
+	},
+	{
+		"EventType": "disarmed",
+		"LockName": "sitename.event.disarming",
+		"User": "user1",
+		"Channel": "",
+		"Time": "2017-06-17T10:22:00"
 	}
 ]
 ```
@@ -55,8 +45,6 @@ Retrieves the last 30 events in the event log and returns a list with dict. It d
 Retrieves the current status, timestamp and name of the person who changed the status.
 ```JSON
 {
-	"event": "Tillkopplat",
-	"user": "Person A",
-	"timestamp": "2016-02-14 23:17:00"
+	"ArmedStatus": "disarmed"
 }
 ```
