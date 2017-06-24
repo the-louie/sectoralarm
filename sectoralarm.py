@@ -38,7 +38,7 @@ import os
 import re
 import sys
 import requests
-from helpers.HTML import parseHTMLToken
+from helpers.HTML import ParseHTMLToken
 
 
 LOGINPAGE = 'https://mypagesapi.sectoralarm.net/User/Login'
@@ -94,7 +94,7 @@ class SectorStatus():
         the login form.
         '''
         response = self.session.get(LOGINPAGE)
-        parser = parseHTMLToken()
+        parser = ParseHTMLToken()
         parser.feed(response.text)
         if not parser.tokens[0]:
             raise Exception('Could not find CSRF-token.')
