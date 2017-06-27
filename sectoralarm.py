@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 '''
 This is a small module to interface against the webpage of Sector Alarm.
